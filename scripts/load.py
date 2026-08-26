@@ -29,7 +29,7 @@ def load_latest_raw_to_sql():
     df = pd.DataFrame(data)
 
     df = df.map(convert_nested_values)
-    
+
     # Connect to SQLite
     conn = sqlite3.connect("db/crypto.db")
 
