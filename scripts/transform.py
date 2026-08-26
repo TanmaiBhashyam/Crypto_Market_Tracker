@@ -66,7 +66,7 @@ def transform():
     ]
 
     os.makedirs("data/processed", exist_ok=True)
-    
+
     # Save cleaned CSV
     df.to_csv(
         "data/processed/coins_clean.csv",
@@ -81,11 +81,20 @@ def transform():
         index=False
     )
 
+     # HISTORICAL DATA
+    df.to_sql(
+        "crypto_market_history",
+        conn,
+        if_exists="append",
+        index=False
+    )
+
     conn.close()
 
     print(f"Transformed {len(df)} rows")
     print("Created: data/processed/coins_clean.csv")
-    print("Created SQLite table: coins_clean")
+    print("Updated SQLite table: coins_clean")
+    print("Appended data to: crypto_market_history")
 
 
 if __name__ == "__main__":
