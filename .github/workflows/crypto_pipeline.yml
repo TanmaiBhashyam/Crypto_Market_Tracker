@@ -3,6 +3,9 @@ name: Crypto Market Pipeline
 on:
   workflow_dispatch:
 
+  schedule:
+    - cron: "*/15 * * * *"
+
 jobs:
   run-pipeline:
 
