@@ -8,11 +8,9 @@ on:
 
 jobs:
   run-pipeline:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -26,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Verify database secrets
+      - name: Test PostgreSQL connection
         env:
           DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
@@ -34,14 +32,4 @@ jobs:
           DATABASE_USER: ${{ secrets.DATABASE_USER }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
-           python -c "import os; print('DATABASE_HOST:', os.getenv('DATABASE_HOST') or 'MISSING'); print('DATABASE_PORT:', os.getenv('DATABASE_PORT') or 'MISSING'); print('DATABASE_NAME:', os.getenv('DATABASE_NAME') or 'MISSING'); print('DATABASE_USER:', os.getenv('DATABASE_USER') or 'MISSING'); print('DATABASE_PASSWORD:', 'SET' if os.getenv('DATABASE_PASSWORD') else 'MISSING')"
-
-      - name: Run crypto pipeline
-        env:
-          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
-          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-          DATABASE_USER: ${{ secrets.DATABASE_USER }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-        run: |
-          python scripts/run_pipeline.py
+          python -c "from scripts.db_connection import get_postgres_engine; engine=get_postgres_engine(); connection=engine.connect(); print('SUCCESS: PostgreSQL connection works from GitHub Actions'); connection.close(); engine.dispose()"
