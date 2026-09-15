@@ -15,7 +15,7 @@ def get_postgres_engine():
         username=os.environ["DATABASE_USER"],
         password=os.environ["DATABASE_PASSWORD"],
         host=os.environ["DATABASE_HOST"],
-        port=int(os.environ.get("DATABASE_PORT", "5432")),
+        port=int(os.environ.get("DATABASE_PORT") or "5432"),
         database=os.environ["DATABASE_NAME"],
     )
 
