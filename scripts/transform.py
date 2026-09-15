@@ -94,16 +94,22 @@ def transform():
         index=False
     )
 
+    print("Writing transformed data to PostgreSQL...")
+
     postgres_engine = get_postgres_engine()
 
-    df.to_sql(
-        "crypto_market_history",
-        postgres_engine,
-        if_exists="append",
-        index=False
-    )
+    try:
+        df.to_sql(
+            "crypto_market_history",
+            postgres_engine,
+            if_exists="append",
+            index=False
+        )
 
-    postgres_engine.dispose()
+        print("✓ PostgreSQL load complete")
+
+    finally:
+        postgres_engine.dispose()
 
     conn.close()
 

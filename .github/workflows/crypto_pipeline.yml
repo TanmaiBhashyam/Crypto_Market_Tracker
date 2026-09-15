@@ -26,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Check database configuration
+      - name: Verify database secrets
         env:
           DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
@@ -34,7 +34,7 @@ jobs:
           DATABASE_USER: ${{ secrets.DATABASE_USER }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
-          python -c "import os; print('DATABASE_HOST:', os.getenv('DATABASE_HOST')); print('DATABASE_PORT:', os.getenv('DATABASE_PORT')); print('DATABASE_NAME:', os.getenv('DATABASE_NAME')); print('DATABASE_USER:', os.getenv('DATABASE_USER')); print('DATABASE_PASSWORD:', 'SET' if os.getenv('DATABASE_PASSWORD') else 'NOT SET')"
+           python -c "import os; print('DATABASE_HOST:', os.getenv('DATABASE_HOST') or 'MISSING'); print('DATABASE_PORT:', os.getenv('DATABASE_PORT') or 'MISSING'); print('DATABASE_NAME:', os.getenv('DATABASE_NAME') or 'MISSING'); print('DATABASE_USER:', os.getenv('DATABASE_USER') or 'MISSING'); print('DATABASE_PASSWORD:', 'SET' if os.getenv('DATABASE_PASSWORD') else 'MISSING')"
 
       - name: Run crypto pipeline
         env:
