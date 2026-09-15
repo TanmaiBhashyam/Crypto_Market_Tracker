@@ -2,6 +2,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import os
+from db_connection import get_postgres_engine
 
 def transform():
 
@@ -14,6 +15,9 @@ def transform():
         conn
     )
 
+    # Add extraction timestamp
+    df["extracted_at"] = pd.Timestamp.now()
+
     # Select only the columns we need
     df = df[
         [
@@ -23,7 +27,8 @@ def transform():
             "current_price",
             "market_cap",
             "total_volume",
-            "price_change_percentage_24h"
+            "price_change_percentage_24h",
+            "extracted_at"
         ]
     ]
 
@@ -48,7 +53,7 @@ def transform():
     )
 
     # Add extraction timestamp
-    df["extracted_at"] = datetime.now().isoformat()
+    df["extracted_at"] = pd.to_datetime(df["extracted_at"])
 
     # Select final column order
     df = df[
@@ -88,6 +93,17 @@ def transform():
         if_exists="append",
         index=False
     )
+
+    postgres_engine = get_postgres_engine()
+
+    df.to_sql(
+        "crypto_market_history",
+        postgres_engine,
+        if_exists="append",
+        index=False
+    )
+
+    postgres_engine.dispose()
 
     conn.close()
 
