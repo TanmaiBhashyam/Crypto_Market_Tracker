@@ -8,9 +8,11 @@ on:
 
 jobs:
   run-pipeline:
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -23,6 +25,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Check database configuration
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+        run: |
+          python -c "import os; print('DATABASE_HOST:', os.getenv('DATABASE_HOST')); print('DATABASE_PORT:', os.getenv('DATABASE_PORT')); print('DATABASE_NAME:', os.getenv('DATABASE_NAME')); print('DATABASE_USER:', os.getenv('DATABASE_USER')); print('DATABASE_PASSWORD:', 'SET' if os.getenv('DATABASE_PASSWORD') else 'NOT SET')"
 
       - name: Run crypto pipeline
         env:
