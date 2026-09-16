@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Test PostgreSQL connection
+      - name: Run crypto pipeline
         env:
           DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
@@ -32,4 +32,4 @@ jobs:
           DATABASE_USER: ${{ secrets.DATABASE_USER }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
-          python -c "from scripts.db_connection import get_postgres_engine; engine=get_postgres_engine(); connection=engine.connect(); print('SUCCESS: PostgreSQL connection works from GitHub Actions'); connection.close(); engine.dispose()"
+          python scripts/run_pipeline.py
