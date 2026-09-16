@@ -1,25 +1,20 @@
-import sqlite3
 import pandas as pd
-from datetime import datetime
-import os
+from sqlalchemy import text
+
 from db_connection import get_postgres_engine
 
-def transform():
 
-    # Connect to SQLite database
-    conn = sqlite3.connect("db/crypto.db")
+def transform_data():
+    # Connect to SQLite
+    sqlite_engine = "sqlite:///db/crypto.db"
 
-    # Read raw data from SQLite
-    df = pd.read_sql_query(
-        "SELECT * FROM coins_raw",
-        conn
-    )
+    # Read raw data
+    df = pd.read_sql("SELECT * FROM coins_raw", sqlite_engine)
 
-    # Add extraction timestamp
-    df["extracted_at"] = pd.Timestamp.now()
+    print(f"Read {len(df)} rows from SQLite")
 
-    # Select only the columns we need
-    df = df[
+    # Keep only the columns we need
+    transformed_df = df[
         [
             "id",
             "symbol",
@@ -27,97 +22,73 @@ def transform():
             "current_price",
             "market_cap",
             "total_volume",
-            "price_change_percentage_24h",
-            "extracted_at"
+            "price_change_percentage_24h"
         ]
-    ]
+    ].copy()
 
-    # Remove rows with missing values
-    df = df.dropna()
-
-    # Convert market cap to billions
-    df["market_cap_b"] = df["market_cap"] / 1_000_000_000
-
-    # Rename columns
-    df = df.rename(
+    # Rename columns for PostgreSQL
+    transformed_df = transformed_df.rename(
         columns={
             "current_price": "price_usd",
+            "market_cap": "market_cap_b",
             "total_volume": "volume_24h",
             "price_change_percentage_24h": "change_24h_pct"
         }
     )
 
+    # Convert market cap to billions
+    transformed_df["market_cap_b"] = (
+        transformed_df["market_cap_b"] / 1_000_000_000
+    )
+
     # Create trend column
-    df["trend"] = df["change_24h_pct"].apply(
-        lambda x: "Up" if x > 0 else ("Down" if x < 0 else "Flat")
+    transformed_df["trend"] = transformed_df["change_24h_pct"].apply(
+        lambda x: "UP" if x > 0
+        else "DOWN" if x < 0
+        else "FLAT"
     )
 
     # Add extraction timestamp
-    df["extracted_at"] = pd.to_datetime(df["extracted_at"])
+    transformed_df["extracted_at"] = pd.Timestamp.now()
 
-    # Select final column order
-    df = df[
-        [
-            "id",
-            "symbol",
-            "name",
-            "price_usd",
-            "market_cap_b",
-            "volume_24h",
-            "change_24h_pct",
-            "trend",
-            "extracted_at"
-        ]
-    ]
-
-    os.makedirs("data/processed", exist_ok=True)
-
-    # Save cleaned CSV
-    df.to_csv(
-        "data/processed/coins_clean.csv",
-        index=False
-    )
-
-    # Save cleaned data back into SQLite
-    df.to_sql(
-        "coins_clean",
-        conn,
-        if_exists="replace",
-        index=False
-    )
-
-     # HISTORICAL DATA
-    df.to_sql(
-        "crypto_market_history",
-        conn,
-        if_exists="append",
-        index=False
-    )
-
+    # Connect to PostgreSQL
     print("Writing transformed data to PostgreSQL...")
 
     postgres_engine = get_postgres_engine()
 
-    try:
-        df.to_sql(
-            "crypto_market_history",
-            postgres_engine,
-            if_exists="append",
-            index=False
-        )
+    # Create table if it doesn't exist
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS crypto_market_history (
+        id TEXT,
+        symbol TEXT,
+        name TEXT,
+        price_usd DOUBLE PRECISION,
+        market_cap_b DOUBLE PRECISION,
+        volume_24h DOUBLE PRECISION,
+        change_24h_pct DOUBLE PRECISION,
+        trend TEXT,
+        extracted_at TIMESTAMP
+    );
+    """
 
-        print("✓ PostgreSQL load complete")
+    with postgres_engine.begin() as connection:
+        connection.execute(text(create_table_sql))
 
-    finally:
-        postgres_engine.dispose()
+    # Insert transformed data
+    transformed_df.to_sql(
+        "crypto_market_history",
+        postgres_engine,
+        if_exists="append",
+        index=False
+    )
 
-    conn.close()
+    postgres_engine.dispose()
 
-    print(f"Transformed {len(df)} rows")
-    print("Created: data/processed/coins_clean.csv")
-    print("Updated SQLite table: coins_clean")
-    print("Appended data to: crypto_market_history")
+    print(
+        f"Successfully inserted "
+        f"{len(transformed_df)} rows into PostgreSQL"
+    )
 
 
 if __name__ == "__main__":
-    transform()
+    transform_data()
