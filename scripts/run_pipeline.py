@@ -1,6 +1,6 @@
 from extract import extract
 from load import load_latest_raw_to_sql
-from transform import transform
+from transform import transform_data
 
 
 def run_pipeline():
@@ -20,7 +20,7 @@ def run_pipeline():
         print("✓ Loading complete")
 
         print("\n[3/3] Transforming data...")
-        transform()
+        transform_data()
         print("✓ Transformation complete")
 
         print("\n" + "=" * 50)
